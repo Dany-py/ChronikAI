@@ -167,4 +167,4 @@ cython_debug/
 *.sqlite3
 check_db.py
 src/infrastructure/db/chronikai.db
-src/.env
+src/.env
