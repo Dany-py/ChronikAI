@@ -19,3 +19,7 @@ __license__   = 'MIT'
 __copyright__ = 'Copyright 2024 Dany-py'
 
 VERSION = __version__
+
+import sys, os
+
+sys.path.insert(os.path.dirname(__file__))

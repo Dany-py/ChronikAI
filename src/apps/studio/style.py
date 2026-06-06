@@ -190,4 +190,16 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
 #activity_item:hover {{
     border: 1px solid {Colors.ACCENT_PURPLE};
 }}
+
+/* Button */
+#button {{
+    border: 1px solid transparent;
+    background: rgba(107,203,119,0.15);
+    border-radius: 10px; padding: 4px 12px;
+    color: {Colors.ACCENT_3}
+}}
+#button:hover {{
+    border-radius: 10px; padding: 4px 12px;
+    border: 1px solid {Colors.ACCENT_3};
+}}
 """

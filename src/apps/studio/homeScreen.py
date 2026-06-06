@@ -4,15 +4,28 @@ Architecture : HomeScreen est un widget autonome monté dans MainWindow.
 """
 
 from PySide6.QtWidgets import (
-    QWidget, QLabel, QVBoxLayout, QHBoxLayout,
+    QPushButton, QWidget, QLabel, QVBoxLayout, QHBoxLayout,
     QFrame, QScrollArea, QSizePolicy, QLineEdit,
     QGraphicsDropShadowEffect
 )
 from PySide6.QtCore import Qt, QTimer, QDateTime
 from PySide6.QtGui import QColor, QFont
-
 from style import AppFont, Colors
+from apps.watcher import Tracker
+import threading
 
+
+# ─── Tracker ─────────────────────────────────────────────────────────────────
+
+def start_watcher(stop_event: threading.Event, tracker: Tracker):
+    """Lance le Tracker dans un thread dédié."""
+
+    # Arrêt propre quand stop_event est déclenché
+    def watch():
+        while not stop_event.is_set():
+            tracker.run_session()
+
+    watch()
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -31,6 +44,59 @@ def h_divider() -> QFrame:
     line.setFixedHeight(1)
     return line
 
+# ─── Tracker button ───────────────────────────────────────────────────────────────
+class TrackerButton(QPushButton):
+    def __init__(self, label: str, parent=None):
+        super().__init__(label, parent)
+        self.setObjectName("button")
+        self.setCheckable(True)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFont(AppFont.body(size=13))
+        self.setFixedHeight(42)
+        self.event = threading.Event()
+        self.tracker = None
+        self.watcher_thread = None
+        self.is_running = False
+    
+    def _run_watcher(self):
+        self.tracker = Tracker(
+            replay=True,
+            duration=60,
+            verbose=True,
+            idle_threshold=1,
+        )
+        self.event.clear()
+
+        self.watcher_thread = threading.Thread(
+            target=start_watcher,
+            args=(self.event, self.tracker),
+            name="watcher",
+            daemon=True,
+        )
+        self.watcher_thread.start()
+        self.is_running = True
+        self.setText("Stop Watcher")
+        print("[watcher] actif")
+
+    def _stop_watcher(self):
+        if self.tracker is not None:
+            self.tracker.should_stop = True
+            try:
+                self.tracker.stop()
+            except Exception:
+                pass
+
+        self.event.set()
+        self.is_running = False
+        self.setText("Start Watcher")
+        print("[watcher] arrêté")
+
+    def toggle(self):
+        if self.is_running:
+            self._stop_watcher()
+        else:
+            self._run_watcher()
+        
 
 # ─── Stat Card ───────────────────────────────────────────────────────────────
 
@@ -144,14 +210,20 @@ class HomeScreen(QWidget):
         layout.addLayout(left)
         layout.addStretch()
 
+        # Button
+        button = TrackerButton(label='Start Watcher')
+        button.clicked.connect(button.toggle)
+        layout.addWidget(button, alignment=Qt.AlignmentFlag.AlignVCenter)
         # Badge "Aujourd'hui actif"
+        
         badge = QLabel("● Session active")
         badge.setFont(AppFont.caption(size=10))
         badge.setStyleSheet(
             f"color: {Colors.ACCENT_3}; background: rgba(107,203,119,0.15);"
             f"border-radius: 10px; padding: 4px 12px;"
         )
-        layout.addWidget(badge, alignment=Qt.AlignmentFlag.AlignVCenter)
+        if button.is_running:
+            layout.addWidget(badge, alignment=Qt.AlignmentFlag.AlignVCenter)
         return layout
 
     def _search_bar(self) -> QLineEdit:

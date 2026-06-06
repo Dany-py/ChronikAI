@@ -6,6 +6,13 @@ Chaque écran est un QWidget indépendant monté dans un QStackedWidget.
 
 import sys
 import os
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+SRC_ROOT = os.path.join(PROJECT_ROOT, "src")
+for path in (SRC_ROOT, PROJECT_ROOT):
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
 #from src.main import VERSION
 
 from PySide6.QtWidgets import (
@@ -65,7 +72,6 @@ class NavButton(QPushButton):
         self.setProperty("active", "true" if active else "false")
         self.style().unpolish(self)
         self.style().polish(self)
-
 
 # ─── Sidebar ─────────────────────────────────────────────────────────────────
 
@@ -146,7 +152,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Chronik AI")
-        self.setMinimumSize(1000, 700)
+        self.setMinimumSize(700, 700)
         self._build_ui()
 
     def _build_ui(self):
